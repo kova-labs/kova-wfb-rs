@@ -43,8 +43,7 @@ with Rx(iface="wlan0", stream_id=1) as rx:
 Runnable example script:
 
 ```bash
-python examples/simple_txrx.py --role tx --iface $NIC --stream-id 1
-python examples/simple_txrx.py --role rx --iface $NIC --stream-id 1
+sudo -E "$VIRTUAL_ENV/bin/python" examples/simple_txrx.py --iface "$NIC" --stream-id 1
 ```
 
 ## Tests
