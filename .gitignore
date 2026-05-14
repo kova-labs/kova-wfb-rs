@@ -21,3 +21,6 @@ target
 #.idea/
 
 python/src/wfb_rs_py.egg-info/
+
+examples_c/*
+!examples_c/*.*
