@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 
 const MAX_PCAP_PACKET_SIZE: i32 = 65535;
 
-// Radiotap field indices (from ieee80211_radiotap.h enum in wfb_simple/vendor).
+// Radiotap field indices.
 const RTAP_TSFT: u32 = 0;
 const RTAP_FLAGS: u32 = 1;
 const RTAP_RATE: u32 = 2;
@@ -35,7 +35,7 @@ const RTAP_AMPDU_STATUS: u32 = 20;
 const RTAP_VHT: u32 = 21;
 const RTAP_TIMESTAMP: u32 = 22;
 
-// Radiotap FLAGS bits (from ieee80211_radiotap.h).
+// Radiotap FLAGS bits.
 const RTAP_F_FCS: u8 = 0x10;
 const RTAP_F_BADFCS: u8 = 0x40;
 

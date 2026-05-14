@@ -7,13 +7,10 @@ pub const WFB_PROTO_VERSION: u8 = 0;
 pub const WFB_FRAME_TYPE_DATA: u8 = 0x08;
 pub const WFB_FRAME_TYPE_RTS: u8 = 0xb4;
 
-// Matches wfb_simple/include/wfb_simple.h
 const WFB_PLAINTEXT_HDR_LEN: usize = 1 + 4 + 2 + 1;
 
-// Matches the injected synthetic IEEE802.11 header template in wfb_simple/vendor/wifibroadcast.hpp
 pub const IEE80211_HEADER_LEN: usize = 24;
 
-// Matches wifibroadcast.hpp
 const WIFI_MTU: usize = 4045;
 
 pub fn compute_max_payload() -> usize {
@@ -69,8 +66,6 @@ pub struct WfbRxMeta {
     pub truncated: bool,
 }
 
-/// On-air plaintext framing header (C struct `wfb_simple_hdr_t`).
-///
 /// All multi-byte integers are in network byte order on the wire.
 #[derive(Debug, Clone, Copy)]
 pub struct WfbFrameHeader {

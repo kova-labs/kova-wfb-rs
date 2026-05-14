@@ -9,8 +9,6 @@ use std::io;
 use std::mem::{size_of, zeroed};
 
 /// HT-only radiotap header template (13 bytes), patched per configuration.
-///
-/// This matches `wfb_simple/vendor/wifibroadcast.hpp` `radiotap_header_ht`.
 const RADIOTAP_HEADER_HT_LEN: usize = 13;
 const RADIOTAP_HT_TEMPLATE: [u8; RADIOTAP_HEADER_HT_LEN] = [
     0x00, 0x00, // radiotap version + pad
@@ -31,8 +29,6 @@ const MCS_BW_20: u8 = 0;
 const MCS_BW_40: u8 = 1;
 
 /// Synthetic IEEE802.11 header template (24 bytes), patched for channel_id + seq.
-///
-/// This matches `wfb_simple/vendor/wifibroadcast.hpp` `ieee80211_header`.
 const IEEE80211_HEADER_LEN: usize = 24;
 const IEEE80211_HEADER_TEMPLATE: [u8; IEEE80211_HEADER_LEN] = [
     0x08, 0x01, 0x00, 0x00, // frame control + duration
@@ -187,8 +183,6 @@ impl WfbTx {
         };
 
         // Patch frame control (matches intended behavior from wifibroadcast.hpp constants).
-        // wfb_simple.cpp currently validates cfg->frame_type but does not patch it; we apply it here
-        // so the Rust API is usable for RTS as well.
         tx.ieee_hdr[0] = tx.frame_type;
 
         // Patch channel_id into synthetic MAC addresses.

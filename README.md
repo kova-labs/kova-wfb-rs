@@ -1,6 +1,6 @@
 # wfb_rs
 
-Rust-only (no vendored C) v0 plaintext framing implementation compatible with the existing `wfb_simple` C/C++ library behavior:
+Rust-only plaintext framing implementation:
 
 - synthetic IEEE802.11 header injection (channel-id embedded in addr2/addr3)
 - HT radiotap TX header template
@@ -27,7 +27,7 @@ Two peers must agree on **both** the wifi channel and the `channel_id` to exchan
 
    (Caps are stripped on every rebuild — re-apply after `cargo build`.)
 3. The capture interface must produce `DLT_IEEE802_11_RADIO` packets.
-4. Plaintext framing only — FEC/encryption are intentionally deferred, matching `wfb_simple` v0.
+4. Plaintext framing only — FEC/encryption are intentionally deferred.
 
 ## System dependencies
 
