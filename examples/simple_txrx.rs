@@ -75,7 +75,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         stream_id: args.stream_id,
         frame_type: args.mode.frame_type(),
         mcs_index: 1,
-        bandwidth: 40,
+        bandwidth: 20,
     };
 
     let rx_cfg = WfbRxConfig {
