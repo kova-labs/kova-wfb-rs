@@ -166,7 +166,16 @@ fn radiotap_meta_from_packet(pkt: &[u8]) -> Option<RadiotapMeta> {
             break;
         }
 
-        let field = field_index as u32;
+        // In EXT present words the field indices 0-31 repeat for each antenna
+        // group. Use the bit position within its word, not the global index.
+        let field = bit_idx as u32;
+
+        // RADIOTAP_NAMESPACE (29) and VENDOR_NAMESPACE (30) are zero-size
+        // control fields — the driver sets them but no data bytes follow.
+        if field == 29 || field == 30 {
+            continue;
+        }
+
         let (align, size) = match field_layout(field) {
             Some(v) => v,
             None => break,
@@ -552,5 +561,69 @@ mod tests {
         assert_eq!(meta.mcs_index, 7);
         assert_eq!(meta.bandwidth, 20);
         assert_eq!(meta.ant_count, 0);
+    }
+
+    // Mirrors the exact radiotap header the RTL8812AU (rtl8812au driver) emits
+    // for a 2-antenna HT RX frame.  The driver uses EXT present words with
+    // RADIOTAP_NAMESPACE (bit 29) to carry per-antenna DBM_ANTSIGNAL + ANTENNA.
+    // Before the fix, bit 29 caused a premature break and field indices in the
+    // EXT words were not remapped to 0-31, so rssi[] stayed at i8::MIN (-128).
+    #[test]
+    fn radiotap_rtl8812au_two_antenna_rssi() {
+        // Present word layout (3 x u32 LE):
+        //   word 0: EXT(31) | RADIOTAP_NAMESPACE(29) | MCS(19) | RX_FLAGS(14) |
+        //           CHANNEL(3) | FLAGS(1) | TSFT(0)
+        //   word 1: EXT(31) | RADIOTAP_NAMESPACE(29) | ANTENNA(11) | DBM_ANTSIGNAL(5)
+        //           (antenna 0, has EXT)
+        //   word 2: ANTENNA(11) | DBM_ANTSIGNAL(5)
+        //           (antenna 1, last)
+        let w0: u32 = (1 << 31) | (1 << 29) | (1 << 19) | (1 << 14) | (1 << 3) | (1 << 1) | (1 << 0);
+        let w1: u32 = (1 << 31) | (1 << 29) | (1 << 11) | (1 << 5);
+        let w2: u32 = (1 << 11) | (1 << 5);
+
+        // Data area starts at offset 16 (8 + 4*2 extra present words).
+        // Layout: TSFT(8) FLAGS(1) pad(1) CHANNEL(4) RX_FLAGS(2) MCS(3)
+        //         [sig0(1) ant0(1)] [sig1(1) ant1(1)]
+        let mut pkt: Vec<u8> = Vec::new();
+        // Radiotap fixed header
+        pkt.extend_from_slice(&[0x00, 0x00]); // version + pad
+        // length placeholder — filled below
+        pkt.extend_from_slice(&[0x00, 0x00]);
+        pkt.extend_from_slice(&w0.to_le_bytes());
+        pkt.extend_from_slice(&w1.to_le_bytes());
+        pkt.extend_from_slice(&w2.to_le_bytes());
+        // TSFT: 8 bytes (offset 16)
+        pkt.extend_from_slice(&0x0102030405060708u64.to_le_bytes());
+        // FLAGS: 1 byte (FCS present)
+        pkt.push(0x10);
+        // pad to 2-byte alignment
+        pkt.push(0x00);
+        // CHANNEL: freq=2412 (2.4 GHz ch1), flags=0x0080 (2GHz+DYN)
+        pkt.extend_from_slice(&2412u16.to_le_bytes());
+        pkt.extend_from_slice(&0x00c0u16.to_le_bytes());
+        // RX_FLAGS: 2 bytes (no errors)
+        pkt.extend_from_slice(&0x0000u16.to_le_bytes());
+        // MCS: known=0x03, flags=0x00 (20MHz), index=3
+        pkt.extend_from_slice(&[0x03, 0x00, 0x03]);
+        // Antenna 0: signal=-65 dBm, antenna index=0
+        pkt.push((-65i8) as u8);
+        pkt.push(0x00);
+        // Antenna 1: signal=-70 dBm, antenna index=1
+        pkt.push((-70i8) as u8);
+        pkt.push(0x01);
+
+        // Patch in the actual radiotap length
+        let rt_len = pkt.len() as u16;
+        pkt[2..4].copy_from_slice(&rt_len.to_le_bytes());
+
+        let meta = radiotap_meta_from_packet(&pkt).unwrap();
+        assert_eq!(meta.rssi[0], -65, "antenna 0 RSSI");
+        assert_eq!(meta.rssi[1], -70, "antenna 1 RSSI");
+        assert_eq!(meta.antenna[0], 0);
+        assert_eq!(meta.antenna[1], 1);
+        assert_eq!(meta.ant_count, 2);
+        assert_eq!(meta.mcs_index, 3);
+        assert!(!meta.self_injected);
+        assert_eq!(meta.freq, 2412);
     }
 }
