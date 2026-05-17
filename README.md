@@ -117,6 +117,49 @@ Useful knobs:
 - `--tx-interval-us` (default `0`, as fast as possible)
 - `--report-ms` (default `1000`)
 
+### `image_ex`, raw binary file transfer 
+
+Sends and receives files or images directly over raw 802.11 frames by chunking payloads, acting as a rudimentary data link
+
+Receiver:
+
+```bash
+sudo ./target/debug/examples/image_txrx --iface "$NIC" --stream-id 1
+```
+
+Sender:
+
+```bash
+sudo ./target/debug/examples/image_txrx --iface "$NIC" --stream-id 1 --file test_image.jpg
+```
+
+The receiver reconstructs the chunks and saves the completed file to disk upon an RX timeout. 
+
+### `mesh_node_img`, tactical layer 2 routing
+
+A custom flood-routing mesh implementation that bridges RF dead zones. Features anti-storm memory filters and hop-count tracking. It encapsulates payloads in a custom 5-byte routing header ([Target] [Source] [Pkt High] [Pkt Low] [Hops])
+
+Demonstrates A -> B -> C relay setup where node B automatically bridges a physical gap between node A and node C.
+
+Node C (Target Receiver):
+
+```bash
+sudo ./target/debug/examples/mesh_node --iface "$NIC" --node-id 3
+```
+
+Node B (The relay):
+
+```bash
+sudo ./target/debug/examples/mesh_node --iface "$NIC" --node-id 2
+```
+
+Node A (The Sender):
+```bash
+sudo ./target/debug/examples/mesh_node --iface "$NIC" --node-id 1 --dest-id 3 --file test_image.jpg
+```
+
+Node B will print "[*] RELAYING..." as it rebroadcasts the traffic. Node C will receive the chunks and tag the link status as [Relayed via 1 HOPS]
+
 ## Sniffing wfb_rs traffic with tcpdump
 
 wfb_rs-injected frames carry a fixed addr2/addr3 of `57:42:<stream_id big-endian>`. For `--stream-id 1` that's `57:42:00:00:00:01`:
