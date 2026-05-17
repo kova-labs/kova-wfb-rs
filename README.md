@@ -124,13 +124,13 @@ Sends and receives files or images directly over raw 802.11 frames by chunking p
 Receiver:
 
 ```bash
-sudo ./target/debug/examples/image_txrx --iface "$NIC" --stream-id 1
+sudo ./target/debug/examples/image_ex --iface "$NIC" --stream-id 1
 ```
 
 Sender:
 
 ```bash
-sudo ./target/debug/examples/image_txrx --iface "$NIC" --stream-id 1 --file test_image.jpg
+sudo ./target/debug/examples/image_ex --iface "$NIC" --stream-id 1 --file test_image.jpg
 ```
 
 The receiver reconstructs the chunks and saves the completed file to disk upon an RX timeout. 
